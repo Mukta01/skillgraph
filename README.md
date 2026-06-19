@@ -95,16 +95,31 @@ skillgraph/
 
 ## ☁️ Architecture
 
-```
-┌──────────────┐     HTTPS      ┌──────────────────┐     PostgreSQL    ┌─────────────────┐
-│   Frontend   │ ──────────────→│   Backend API    │ ─────────────────→│  Azure Database  │
-│  App Service │    REST API    │   App Service    │   (SSL required)  │  for PostgreSQL  │
-│  (Node 22)   │                │  (Python 3.11)   │                   │ (Flexible Server)│
-└──────────────┘                └──────────────────┘                   └─────────────────┘
-       ↑                                ↑
-       │                                │
-   GitHub Actions                  GitHub Actions
-  (frontend-deploy.yml)          (backend-deploy.yml)
+```mermaid
+graph LR
+    subgraph "Azure Cloud"
+        FE["🖥️ Frontend<br/>App Service<br/>(Node.js 22)"]
+        BE["⚡ Backend API<br/>App Service<br/>(Python 3.11)"]
+        DB[("🗄️ PostgreSQL<br/>Flexible Server")]
+    end
+
+    User["👤 User<br/>(Browser)"] -->|"HTTPS"| FE
+    FE -->|"REST API"| BE
+    BE -->|"asyncpg (SSL)"| DB
+    BE -->|"Gemini API"| Gemini["🤖 Google Gemini"]
+
+    subgraph "CI/CD"
+        GHA1["GitHub Actions<br/>frontend-deploy.yml"] -.->|"deploy"| FE
+        GHA2["GitHub Actions<br/>backend-deploy.yml"] -.->|"deploy"| BE
+    end
+
+    style FE fill:#4f46e5,stroke:#6366f1,color:#fff
+    style BE fill:#059669,stroke:#10b981,color:#fff
+    style DB fill:#d97706,stroke:#f59e0b,color:#fff
+    style Gemini fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style User fill:#1e293b,stroke:#475569,color:#fff
+    style GHA1 fill:#1f2937,stroke:#4b5563,color:#9ca3af
+    style GHA2 fill:#1f2937,stroke:#4b5563,color:#9ca3af
 ```
 
 ---

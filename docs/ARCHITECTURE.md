@@ -4,42 +4,46 @@
 
 SkillGraph is a three-tier cloud-native application deployed on Microsoft Azure. It accepts a user's resume and a target job role, then uses Google Gemini AI to perform skill extraction, gap analysis, and personalized learning roadmap generation.
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                          USER (Browser)                              │
-│                                                                      │
-│   Upload Resume (.pdf/.docx/.txt)  +  Select Target Role             │
-└─────────────────────────────┬────────────────────────────────────────┘
-                              │ HTTPS (REST API)
-                              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                     FRONTEND (Next.js 16)                            │
-│                     Azure App Service (Node 22)                      │
-│                                                                      │
-│   Landing Page ──→ Analyze ──→ Results Page                          │
-│   (ResumeUpload)   (POST)     (SkillGraph + GapSummary + Roadmap)   │
-└─────────────────────────────┬────────────────────────────────────────┘
-                              │ HTTPS (REST API)
-                              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                     BACKEND (FastAPI / Python 3.11)                   │
-│                     Azure App Service (Linux)                        │
-│                                                                      │
-│   ┌─────────────┐   ┌──────────────┐   ┌──────────────────┐         │
-│   │ Resume      │   │ AI Service   │   │ Gap Analyzer     │         │
-│   │ Parser      │──→│ (Gemini API) │──→│ (Pure Python)    │         │
-│   │ (PDF/DOCX)  │   │              │   │                  │         │
-│   └─────────────┘   └──────┬───────┘   └──────────────────┘         │
-│                             │                                        │
-└─────────────────────────────┼────────────────────────────────────────┘
-                              │ asyncpg (SSL)
-                              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│              AZURE DATABASE FOR POSTGRESQL                           │
-│              (Flexible Server)                                       │
-│                                                                      │
-│   Tables: sessions | analyses | role_skills_cache                    │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    User["👤 User (Browser)<br/>Upload Resume + Select Role"] -->|"HTTPS"| FE
+
+    subgraph "Frontend — Azure App Service (Node.js 22)"
+        FE["Next.js 16"] --> Landing["Landing Page<br/>(ResumeUpload + RoleSelector)"]
+        Landing -->|"POST /api/analyze"| Results["Results Page<br/>(SkillGraph + GapSummary + Roadmap)"]
+    end
+
+    FE -->|"REST API (HTTPS)"| BE
+
+    subgraph "Backend — Azure App Service (Python 3.11)"
+        BE["FastAPI"] --> Parser["📄 Resume Parser<br/>(PDF / DOCX / TXT)"]
+        Parser --> AI["🤖 AI Service<br/>(Google Gemini)"]
+        AI --> Gap["🎯 Gap Analyzer<br/>(Pure Python)"]
+    end
+
+    BE -->|"asyncpg (SSL)"| DB
+
+    subgraph "Database — Azure PostgreSQL"
+        DB[("🗄️ PostgreSQL Flexible Server")] --> T1["sessions"]
+        DB --> T2["analyses"]
+        DB --> T3["role_skills_cache"]
+    end
+
+    AI <-->|"Gemini API"| Gemini["🤖 Google Gemini"]
+
+    style User fill:#1e293b,stroke:#475569,color:#fff
+    style FE fill:#4f46e5,stroke:#6366f1,color:#fff
+    style BE fill:#059669,stroke:#10b981,color:#fff
+    style DB fill:#d97706,stroke:#f59e0b,color:#fff
+    style Gemini fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style Parser fill:#065f46,stroke:#10b981,color:#fff
+    style AI fill:#065f46,stroke:#10b981,color:#fff
+    style Gap fill:#065f46,stroke:#10b981,color:#fff
+    style Landing fill:#312e81,stroke:#6366f1,color:#fff
+    style Results fill:#312e81,stroke:#6366f1,color:#fff
+    style T1 fill:#92400e,stroke:#f59e0b,color:#fff
+    style T2 fill:#92400e,stroke:#f59e0b,color:#fff
+    style T3 fill:#92400e,stroke:#f59e0b,color:#fff
 ```
 
 ---
@@ -48,49 +52,34 @@ SkillGraph is a three-tier cloud-native application deployed on Microsoft Azure.
 
 ### Full Analysis Pipeline
 
-```
-1. User uploads resume + selects role
-         │
-2. Frontend sends POST /api/analyze (multipart/form-data)
-         │
-3. Backend: resume_parser.py
-   │  - PDF → PyMuPDF (fitz) extracts text
-   │  - DOCX → python-docx extracts paragraphs
-   │  - TXT → UTF-8 decode
-   │  - File bytes are discarded immediately after extraction
-         │
-4. Backend: ai_service.py → extract_skills_from_resume()
-   │  - Sends resume text to Gemini with structured output schema
-   │  - Returns: list of skills with categories + proficiency levels
-   │  - Also returns a brief professional summary
-         │
-5. Backend: db.py → get_cached_role_skills()
-   │  - Checks PostgreSQL cache for the target role
-   │  - If CACHE HIT: skip step 6
-         │
-6. Backend: ai_service.py → extract_role_skills()
-   │  - Sends role name to Gemini
-   │  - Returns: skills required for the role with levels
-   │  - Result is cached in PostgreSQL for future requests
-         │
-7. Backend: gap_analyzer.py → analyze_gap()
-   │  - Pure Python — no AI call
-   │  - Normalizes skill names (case, punctuation, spaces)
-   │  - Performs exact + partial matching
-   │  - Calculates readiness_score = matched / total
-         │
-8. Backend: ai_service.py → generate_roadmap()
-   │  - Sends missing skills to Gemini
-   │  - Returns: phased learning plan with time estimates + resources
-         │
-9. Backend: db.py → save_analysis()
-   │  - Saves full result JSON to PostgreSQL
-   │  - Creates/updates anonymous session
-         │
-10. Frontend receives AnalysisResponse
-    │  - Stores in sessionStorage
-    │  - Redirects to /results page
-    │  - Renders: SkillGraph + GapSummary + Roadmap
+```mermaid
+flowchart TD
+    A["1. User uploads resume + selects role"] --> B["2. Frontend sends POST /api/analyze"]
+    B --> C["3. resume_parser.py<br/>PDF → PyMuPDF | DOCX → python-docx | TXT → decode<br/>File bytes discarded after extraction"]
+    C --> D["4. ai_service.py → extract_skills_from_resume()<br/>Gemini extracts skills + proficiency levels + summary"]
+    D --> E{"5. Check role_skills_cache<br/>in PostgreSQL"}
+    E -->|"CACHE HIT"| G
+    E -->|"CACHE MISS"| F["6. ai_service.py → extract_role_skills()<br/>Gemini generates role requirements<br/>Result cached in PostgreSQL"]
+    F --> G["7. gap_analyzer.py → analyze_gap()<br/>Normalize + match skills (exact + partial)<br/>Calculate readiness_score"]
+    G --> H{"Missing skills?"}
+    H -->|"Yes"| I["8. ai_service.py → generate_roadmap()<br/>Gemini creates phased learning plan"]
+    H -->|"No"| J["Empty roadmap (score = 100%)"]
+    I --> K["9. db.py → save_analysis()<br/>Save result JSON to PostgreSQL"]
+    J --> K
+    K --> L["10. Frontend receives AnalysisResponse<br/>Store in sessionStorage → redirect to /results<br/>Render: SkillGraph + GapSummary + Roadmap"]
+
+    style A fill:#1e293b,stroke:#475569,color:#fff
+    style B fill:#4f46e5,stroke:#6366f1,color:#fff
+    style C fill:#059669,stroke:#10b981,color:#fff
+    style D fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style E fill:#d97706,stroke:#f59e0b,color:#fff
+    style F fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style G fill:#059669,stroke:#10b981,color:#fff
+    style H fill:#d97706,stroke:#f59e0b,color:#fff
+    style I fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style J fill:#059669,stroke:#10b981,color:#fff
+    style K fill:#d97706,stroke:#f59e0b,color:#fff
+    style L fill:#4f46e5,stroke:#6366f1,color:#fff
 ```
 
 ### Gemini API Calls Per Analysis
@@ -121,18 +110,27 @@ SkillGraph is a three-tier cloud-native application deployed on Microsoft Azure.
 
 The `ai_service.py` module includes a robust retry and fallback mechanism:
 
-```
-Primary Model (from GEMINI_MODEL env var)
-    ↓ fails 3x
-gemini-2.5-flash-lite
-    ↓ fails 3x
-gemini-2.5-flash
-    ↓ fails 3x
-gemini-3.5-flash
-    ↓ fails 3x
-gemini-flash-lite-latest
-    ↓ all failed
-Raise exception → 500 error to user
+```mermaid
+flowchart TD
+    A["Primary Model<br/>(from GEMINI_MODEL env var)"] -->|"fails 3x"| B["gemini-2.5-flash-lite"]
+    B -->|"fails 3x"| C["gemini-2.5-flash"]
+    C -->|"fails 3x"| D["gemini-3.5-flash"]
+    D -->|"fails 3x"| E["gemini-flash-lite-latest"]
+    E -->|"all failed"| F["❌ Raise exception → 500 error"]
+
+    A -->|"success"| G["✅ Return response"]
+    B -->|"success"| G
+    C -->|"success"| G
+    D -->|"success"| G
+    E -->|"success"| G
+
+    style A fill:#059669,stroke:#10b981,color:#fff
+    style B fill:#4f46e5,stroke:#6366f1,color:#fff
+    style C fill:#4f46e5,stroke:#6366f1,color:#fff
+    style D fill:#4f46e5,stroke:#6366f1,color:#fff
+    style E fill:#4f46e5,stroke:#6366f1,color:#fff
+    style F fill:#dc2626,stroke:#ef4444,color:#fff
+    style G fill:#16a34a,stroke:#22c55e,color:#fff
 ```
 
 - **Transient errors** (503, 429 rate limit): retried with exponential backoff
@@ -232,26 +230,36 @@ Tables are created automatically on application startup via the `init_db()` func
 ### GitHub Actions Workflows
 
 #### Backend (`backend-deploy.yml`)
-```
-Push to main (backend/** changed)
-  → Checkout code
-  → Setup Python 3.11
-  → Zip backend/ directory
-  → Deploy ZIP to Azure App Service via publish profile
-  → Azure runs pip install (SCM_DO_BUILD_DURING_DEPLOYMENT=1)
-  → App starts with: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+```mermaid
+flowchart LR
+    A["Push to main<br/>(backend/** changed)"] --> B["Checkout code"]
+    B --> C["Setup Python 3.11"]
+    C --> D["Zip backend/ directory"]
+    D --> E["Deploy ZIP to<br/>Azure App Service"]
+    E --> F["Azure runs pip install<br/>(SCM_DO_BUILD)"]
+    F --> G["✅ uvicorn starts<br/>on port 8000"]
+
+    style A fill:#1f2937,stroke:#4b5563,color:#9ca3af
+    style E fill:#4f46e5,stroke:#6366f1,color:#fff
+    style G fill:#059669,stroke:#10b981,color:#fff
 ```
 
 #### Frontend (`frontend-deploy.yml`)
-```
-Push to main (frontend/** changed)
-  → Checkout code
-  → Setup Node.js 22
-  → npm ci + npm run build (with NEXT_PUBLIC_API_URL baked in)
-  → Copy static assets into standalone output
-  → Zip standalone build
-  → Deploy ZIP to Azure App Service via publish profile
-  → App starts with: node server.js
+
+```mermaid
+flowchart LR
+    A["Push to main<br/>(frontend/** changed)"] --> B["Checkout code"]
+    B --> C["Setup Node.js 22"]
+    C --> D["npm ci + npm run build<br/>(NEXT_PUBLIC_API_URL baked in)"]
+    D --> E["Copy static assets<br/>into standalone output"]
+    E --> F["Zip standalone build"]
+    F --> G["Deploy ZIP to<br/>Azure App Service"]
+    G --> H["✅ node server.js<br/>starts on port 3000"]
+
+    style A fill:#1f2937,stroke:#4b5563,color:#9ca3af
+    style G fill:#4f46e5,stroke:#6366f1,color:#fff
+    style H fill:#059669,stroke:#10b981,color:#fff
 ```
 
 ### Required GitHub Secrets
