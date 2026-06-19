@@ -21,11 +21,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
 
-      # 3. Install dependencies and build Next.js app
+      # 3. Install dependencies and build Next.js app (standalone mode)
       - name: Install dependencies and build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
@@ -34,14 +34,20 @@ jobs:
           npm ci
           npm run build
 
-      # 4. Zip the build artifacts (including .next, public, package files, and node_modules)
-      # Zipping node_modules ensures that Azure runs it instantly without needing additional build steps.
+      # 4. Prepare standalone deployment package
+      # Copy static assets and public files into the standalone output
+      - name: Prepare standalone package
+        run: |
+          cp -r frontend/.next/static frontend/.next/standalone/.next/static
+          cp -r frontend/public frontend/.next/standalone/public
+
+      # 5. Zip the standalone build for deployment
       - name: Zip artifacts for deployment
         run: |
-          cd frontend
-          zip -r ../frontend-release.zip .next public package.json package-lock.json node_modules
+          cd frontend/.next/standalone
+          zip -r ../../../frontend-release.zip .
 
-      # 5. Deploy to Azure Web App (Frontend App Service)
+      # 6. Deploy to Azure Web App (Frontend App Service)
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
