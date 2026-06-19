@@ -37,7 +37,8 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
     
     // Role center node
     const roleId = "RoleCenter";
-    graph += `    ${roleId}["${roleRequirements.role_title}"]\n`;
+    const safeRoleTitle = roleRequirements.role_title.replace(/"/g, "'");
+    graph += `    ${roleId}["${safeRoleTitle}"]\n`;
     
     const matchedClass = "matchedSkill";
     const missingClass = "missingSkill";
@@ -97,10 +98,11 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
         setSvgContent(svg);
         setError("");
       } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err);
         console.error("Mermaid rendering failed:", err);
         // Log the generated markdown to console so we can see what broke
         console.log("Failed Markdown:", mermaidMarkdown);
-        setError("Failed to render the skill graph.");
+        setError(`Failed to render the skill graph. Error: ${errMessage}\n\nMarkdown:\n${mermaidMarkdown}`);
       }
     };
 
@@ -115,8 +117,11 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
         dangerouslySetInnerHTML={{ __html: svgContent }}
       />
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center text-red-400">
-          {error}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-950 p-6 overflow-auto">
+          <div className="text-red-400 font-bold mb-4">Failed to render the skill graph.</div>
+          <pre className="text-xs text-red-300/80 bg-red-950/30 p-4 rounded-lg w-full max-w-3xl overflow-x-auto whitespace-pre-wrap font-mono">
+            {error}
+          </pre>
         </div>
       )}
       {/* Legend */}
