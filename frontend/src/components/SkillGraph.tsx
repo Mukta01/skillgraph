@@ -1,32 +1,13 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  type Node,
-  type Edge,
-  Position,
-  MarkerType,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-
+import { useEffect, useRef, useState, useMemo } from "react";
+import mermaid from "mermaid";
 import type { GapResult, RoleSkillRequirements } from "@/lib/types";
 
 interface SkillGraphProps {
   gap: GapResult;
   roleRequirements: RoleSkillRequirements;
 }
-
-/** Category → column position mapping for layout */
-const CATEGORY_COLS: Record<string, number> = {
-  technical: 0,
-  tool: 1,
-  domain: 2,
-  soft: 3,
-  certification: 4,
-};
 
 const CATEGORY_LABELS: Record<string, string> = {
   technical: "Technical",
@@ -37,15 +18,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
-  const matchedNames = useMemo(
-    () => new Set(gap.matched_skills.map((s) => s.name.toLowerCase())),
-    [gap.matched_skills]
-  );
+  const [svgContent, setSvgContent] = useState<string>("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string>("");
 
-  const { nodes, edges } = useMemo(() => {
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-
+  const mermaidMarkdown = useMemo(() => {
+    const matchedNames = new Set(gap.matched_skills.map((s) => s.name.toLowerCase()));
+    
     // Group skills by category
     const groups: Record<string, typeof roleRequirements.skills> = {};
     for (const skill of roleRequirements.skills) {
@@ -54,145 +33,92 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
       groups[cat].push(skill);
     }
 
-    const colWidth = 280;
-    const rowHeight = 80;
-    const headerHeight = 50;
+    let graph = `graph TD\n`;
+    
+    // Role center node
+    const roleId = "RoleCenter";
+    graph += `    ${roleId}["${roleRequirements.role_title}"]\n`;
+    
+    const matchedClass = "matchedSkill";
+    const missingClass = "missingSkill";
+    const roleClass = "roleCenter";
+    
+    // Styles
+    graph += `    classDef ${matchedClass} fill:rgba(52,211,153,0.12),stroke:rgba(52,211,153,0.5),color:#6ee7b7,stroke-width:1.5px,rx:10px,ry:10px;\n`;
+    graph += `    classDef ${missingClass} fill:rgba(248,113,113,0.12),stroke:rgba(248,113,113,0.5),color:#fca5a5,stroke-width:1.5px,rx:10px,ry:10px;\n`;
+    graph += `    classDef ${roleClass} fill:rgba(99,102,241,0.2),stroke:rgba(99,102,241,0.6),color:#c7d2fe,stroke-width:2px,rx:14px,ry:14px;\n`;
+    graph += `    classDef category fill:rgba(99,102,241,0.05),stroke:rgba(99,102,241,0.3),stroke-width:1px,stroke-dasharray: 5 5,color:#a5b4fc;\n\n`;
 
-    // Create category header nodes + skill nodes
-    Object.entries(groups).forEach(([category, skills]) => {
-      const col = CATEGORY_COLS[category] ?? Object.keys(groups).indexOf(category);
-      const x = col * colWidth + 50;
+    graph += `    class ${roleId} ${roleClass};\n\n`;
 
-      // Category header node
-      nodes.push({
-        id: `header-${category}`,
-        position: { x, y: 0 },
-        data: { label: CATEGORY_LABELS[category] || category },
-        type: "default",
-        style: {
-          background: "rgba(99, 102, 241, 0.15)",
-          border: "1px solid rgba(99, 102, 241, 0.3)",
-          borderRadius: "10px",
-          color: "#a5b4fc",
-          fontSize: "12px",
-          fontWeight: "600",
-          textTransform: "uppercase" as const,
-          letterSpacing: "0.05em",
-          padding: "6px 16px",
-          width: "auto",
-        },
-        draggable: false,
-        selectable: false,
-        sourcePosition: Position.Bottom,
-        targetPosition: Position.Top,
-      });
-
-      skills.forEach((skill, idx) => {
+    // Subgraphs and nodes
+    let nodeIndex = 0;
+    Object.entries(groups).forEach(([category, skills], i) => {
+      const catLabel = CATEGORY_LABELS[category] || category;
+      const catId = `Cat_${i}`;
+      
+      graph += `    subgraph ${catId} ["${catLabel}"]\n`;
+      graph += `      direction TB\n`;
+      
+      const nodeIds: string[] = [];
+      skills.forEach((skill) => {
+        const nodeId = `Node_${nodeIndex++}`;
         const isMatched = matchedNames.has(skill.name.toLowerCase());
-        const y = headerHeight + idx * rowHeight + 20;
-
-        nodes.push({
-          id: `skill-${skill.name}`,
-          position: { x, y },
-          data: { label: skill.name },
-          sourcePosition: Position.Bottom,
-          targetPosition: Position.Top,
-          style: {
-            background: isMatched
-              ? "rgba(52, 211, 153, 0.12)"
-              : "rgba(248, 113, 113, 0.12)",
-            border: `1.5px solid ${isMatched ? "rgba(52, 211, 153, 0.5)" : "rgba(248, 113, 113, 0.5)"}`,
-            borderRadius: "10px",
-            color: isMatched ? "#6ee7b7" : "#fca5a5",
-            fontSize: "13px",
-            fontWeight: "500",
-            padding: "8px 16px",
-            width: "auto",
-            minWidth: "120px",
-            textAlign: "center" as const,
-          },
-        });
-
-        // Edge from header to skill
-        edges.push({
-          id: `edge-${category}-${skill.name}`,
-          source: `header-${category}`,
-          target: `skill-${skill.name}`,
-          type: "smoothstep",
-          animated: !isMatched,
-          style: {
-            stroke: isMatched
-              ? "rgba(52, 211, 153, 0.3)"
-              : "rgba(248, 113, 113, 0.2)",
-            strokeWidth: 1.5,
-          },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 12,
-            height: 12,
-            color: isMatched
-              ? "rgba(52, 211, 153, 0.5)"
-              : "rgba(248, 113, 113, 0.3)",
-          },
-        });
+        const safeName = skill.name.replace(/"/g, "'"); // Escape quotes
+        
+        graph += `      ${nodeId}["${safeName}"]\n`;
+        graph += `      class ${nodeId} ${isMatched ? matchedClass : missingClass};\n`;
+        nodeIds.push(nodeId);
       });
+      graph += `    end\n`;
+      graph += `    class ${catId} category;\n`;
+      
+      // Edge from role to category
+      graph += `    ${roleId} --> ${catId}\n`;
+      // Style the edge
+      graph += `    linkStyle ${i} stroke:rgba(99,102,241,0.3),stroke-width:1.5px;\n\n`;
     });
 
-    // Add a central role node
-    const totalCols = Object.keys(groups).length;
-    const centerX = ((totalCols - 1) * colWidth) / 2 + 50;
-    nodes.push({
-      id: "role-center",
-      position: { x: centerX - 60, y: -100 },
-      data: { label: roleRequirements.role_title },
-      style: {
-        background: "rgba(99, 102, 241, 0.2)",
-        border: "2px solid rgba(99, 102, 241, 0.6)",
-        borderRadius: "14px",
-        color: "#c7d2fe",
-        fontSize: "15px",
-        fontWeight: "700",
-        padding: "10px 24px",
-        width: "auto",
-      },
-      draggable: false,
+    return graph;
+  }, [gap, roleRequirements]);
+
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'inherit',
     });
 
-    // Connect role to each category header
-    Object.keys(groups).forEach((category) => {
-      edges.push({
-        id: `edge-role-${category}`,
-        source: "role-center",
-        target: `header-${category}`,
-        type: "smoothstep",
-        style: { stroke: "rgba(99, 102, 241, 0.3)", strokeWidth: 1.5 },
-      });
-    });
+    const renderGraph = async () => {
+      try {
+        const id = `mermaid-graph-\${Math.random().toString(36).substring(2, 9)}`;
+        const { svg } = await mermaid.render(id, mermaidMarkdown);
+        setSvgContent(svg);
+        setError("");
+      } catch (err) {
+        console.error("Mermaid rendering failed:", err);
+        setError("Failed to render the skill graph.");
+      }
+    };
 
-    return { nodes, edges };
-  }, [gap, roleRequirements, matchedNames]);
+    renderGraph();
+  }, [mermaidMarkdown]);
 
   return (
-    <div className="w-full h-[500px] rounded-xl overflow-hidden border border-white/10 bg-gray-950/50">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        proOptions={{ hideAttribution: true }}
-        minZoom={0.3}
-        maxZoom={1.5}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-      >
-        <Background color="rgba(255,255,255,0.03)" gap={20} />
-        <Controls
-          showInteractive={false}
-          className="!bg-gray-900/80 !border-white/10 !rounded-lg [&>button]:!bg-transparent [&>button]:!border-white/10 [&>button]:!text-white/50 [&>button:hover]:!bg-white/10"
-        />
-      </ReactFlow>
-
+    <div className="w-full h-[500px] rounded-xl border border-white/10 bg-gray-950/50 flex flex-col relative overflow-hidden">
+      <div 
+        ref={containerRef}
+        className="flex-1 overflow-auto flex items-center justify-center p-4 [&>svg]:max-w-full [&>svg]:h-auto"
+        dangerouslySetInnerHTML={{ __html: svgContent }}
+      />
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center text-red-400">
+          {error}
+        </div>
+      )}
       {/* Legend */}
-      <div className="flex items-center justify-center gap-6 py-3 bg-gray-950/80 border-t border-white/5">
+      <div className="flex-shrink-0 flex items-center justify-center gap-6 py-3 bg-gray-950/80 border-t border-white/5">
         <div className="flex items-center gap-2 text-xs text-white/50">
           <span className="w-3 h-3 rounded-full bg-emerald-400/60" />
           Skills you have
