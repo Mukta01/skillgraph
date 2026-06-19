@@ -93,7 +93,7 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
 
     const renderGraph = async () => {
       try {
-        const id = `mermaid-graph-\${Math.random().toString(36).substring(2, 9)}`;
+        const id = `mermaid-graph-${Math.random().toString(36).substring(2, 9)}`;
         const { svg } = await mermaid.render(id, mermaidMarkdown);
         setSvgContent(svg);
         setError("");
