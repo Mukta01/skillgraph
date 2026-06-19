@@ -62,6 +62,7 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
       graph += `      direction TB\n`;
       
       const nodeIds: string[] = [];
+      let prevNodeId: string | null = null;
       skills.forEach((skill) => {
         const nodeId = `Node_${nodeIndex++}`;
         const isMatched = matchedNames.has(skill.name.toLowerCase());
@@ -69,6 +70,12 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
         
         graph += `      ${nodeId}["${safeName}"]\n`;
         graph += `      class ${nodeId} ${isMatched ? matchedClass : missingClass};\n`;
+        
+        if (prevNodeId) {
+          graph += `      ${prevNodeId} ~~~ ${nodeId}\n`;
+        }
+        prevNodeId = nodeId;
+        
         nodeIds.push(nodeId);
       });
       graph += `    end\n`;
