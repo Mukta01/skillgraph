@@ -45,6 +45,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'skillgraph-app-web-h6g7h8cmbud8gtfd' # Replace this with your actual Azure App Service name for the frontend
+          app-name: 'skillgraph-app-web' # Replace this with your actual Azure App Service name for the frontend
           publish-profile: ${{ secrets.AZURE_WEBAPP_FRONTEND_PUBLISH_PROFILE }}
           package: './frontend-release.zip'
