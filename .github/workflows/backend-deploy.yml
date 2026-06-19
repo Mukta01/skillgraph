@@ -1,0 +1,39 @@
+name: Deploy FastAPI Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. Zip the backend directory for deployment
+      # (Azure App Service Linux handles building dependencies on its end)
+      - name: Zip artifact for deployment
+        run: |
+          cd backend
+          zip -r ../release.zip .
+
+      # 4. Deploy to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'skillgraph-api' # Replace this with your actual Azure App Service name if different
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: './release.zip'
