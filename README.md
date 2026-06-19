@@ -17,11 +17,11 @@ SkillGraph is a cloud-native platform that analyzes real job market data, compar
 
 | Feature | Description |
 |---|---|
-| **Resume Upload & Parsing** | Drag-and-drop PDF/DOCX/TXT. Extracts text in-memory — resume is **never stored**. |
+| **Resume Upload & Parsing** | Drag-and-drop PDF/DOCX/TXT or Image (JPEG/PNG/WebP). Extracts text in-memory and parses images natively via Gemini — resume is **never stored**. |
 | **AI Skill Extraction** | Google Gemini reads your resume and identifies your skills with proficiency levels. |
 | **Job Market Analysis** | AI determines what skills your target role actually requires, based on real market data. |
 | **Gap Analysis** | Compares your skills vs. role requirements. Shows readiness score (0–100%), matched & missing skills. |
-| **Interactive Skill Graph** | Visual node graph (React Flow). Green = you have it, red = you need it. Click any skill for details. |
+| **Visual Skill Graph** | Clean Mermaid.js hierarchy graph. Green = you have it, red = you need it. |
 | **AI Learning Roadmap** | Phased learning plan with time estimates and free resource links for every missing skill. |
 | **35+ Roles Supported** | Works for any job — Software Engineer, Data Scientist, Marketing Manager, UX Designer, and more. |
 | **Smart Caching** | Role skill requirements are cached in PostgreSQL. Repeat queries are instant. |
@@ -35,12 +35,12 @@ SkillGraph is a cloud-native platform that analyzes real job market data, compar
 ### Frontend
 - **Next.js 16** (App Router, TypeScript, Standalone output)
 - **Tailwind CSS v4** — styling
-- **React Flow (@xyflow/react)** — interactive skill graph visualization
+- **Mermaid.js** — automatic visual skill graph generation
 - **React 19** — UI framework
 
 ### Backend
 - **Python 3.11+ / FastAPI** — REST API
-- **Google Gemini** (`gemini-2.5-flash-lite`) — AI skill extraction & roadmap generation
+- **Google Gemini** (`gemini-2.5-flash-lite`) — AI skill extraction, image vision processing, & roadmap generation
 - **Instructor** — structured LLM output with Pydantic validation
 - **PyMuPDF & python-docx** — PDF/DOCX text extraction
 - **asyncpg** — async PostgreSQL driver
@@ -78,7 +78,7 @@ skillgraph/
 │   │   │   ├── ResumeUpload.tsx # Drag-and-drop file upload
 │   │   │   ├── Roadmap.tsx      # Learning roadmap display
 │   │   │   ├── RoleSelector.tsx # Target role dropdown
-│   │   │   └── SkillGraph.tsx   # Interactive node graph
+│   │   │   └── SkillGraph.tsx   # Mermaid.js visualization component
 │   │   └── lib/                 # API client, types, utilities
 │   ├── next.config.ts
 │   └── package.json
