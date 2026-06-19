@@ -1,0 +1,50 @@
+name: Deploy Next.js Frontend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-deploy.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      # 3. Install dependencies and build Next.js app
+      - name: Install dependencies and build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # 4. Zip the build artifacts (including .next, public, package files, and node_modules)
+      # Zipping node_modules ensures that Azure runs it instantly without needing additional build steps.
+      - name: Zip artifacts for deployment
+        run: |
+          cd frontend
+          zip -r ../frontend-release.zip .next public package.json package-lock.json node_modules
+
+      # 5. Deploy to Azure Web App (Frontend App Service)
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'skillgraph-web' # Replace this with your actual Azure App Service name for the frontend
+          publish-profile: ${{ secrets.AZURE_WEBAPP_FRONTEND_PUBLISH_PROFILE }}
+          package: './frontend-release.zip'
