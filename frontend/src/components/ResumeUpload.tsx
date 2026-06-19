@@ -95,6 +95,7 @@ export default function ResumeUpload({
           <p className="text-white/70 font-medium">
             Drop your resume here, or{" "}
             <span className="text-indigo-400 underline underline-offset-2">browse</span>
+          </p>
           <p className="text-sm text-white/40">PDF, DOCX, TXT, or Image (JPEG/PNG/WebP) • Max 5MB</p>
         </>
       )}
