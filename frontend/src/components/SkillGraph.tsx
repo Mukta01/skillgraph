@@ -43,11 +43,11 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
     const missingClass = "missingSkill";
     const roleClass = "roleCenter";
     
-    // Styles
-    graph += `    classDef ${matchedClass} fill:rgba(52,211,153,0.12),stroke:rgba(52,211,153,0.5),color:#6ee7b7,stroke-width:1.5px,rx:10px,ry:10px;\n`;
-    graph += `    classDef ${missingClass} fill:rgba(248,113,113,0.12),stroke:rgba(248,113,113,0.5),color:#fca5a5,stroke-width:1.5px,rx:10px,ry:10px;\n`;
-    graph += `    classDef ${roleClass} fill:rgba(99,102,241,0.2),stroke:rgba(99,102,241,0.6),color:#c7d2fe,stroke-width:2px,rx:14px,ry:14px;\n`;
-    graph += `    classDef category fill:rgba(99,102,241,0.05),stroke:rgba(99,102,241,0.3),stroke-width:1px,stroke-dasharray: 5 5,color:#a5b4fc;\n\n`;
+    // Styles (Using solid hex colors because commas in rgba() break Mermaid's classDef parser)
+    graph += `    classDef ${matchedClass} fill:#064e3b,stroke:#047857,color:#6ee7b7,stroke-width:1.5px,rx:10px,ry:10px;\n`;
+    graph += `    classDef ${missingClass} fill:#7f1d1d,stroke:#b91c1c,color:#fca5a5,stroke-width:1.5px,rx:10px,ry:10px;\n`;
+    graph += `    classDef ${roleClass} fill:#312e81,stroke:#4f46e5,color:#c7d2fe,stroke-width:2px,rx:14px,ry:14px;\n`;
+    graph += `    classDef category fill:transparent,stroke:#4f46e5,stroke-width:1px,stroke-dasharray:5 5,color:#a5b4fc;\n\n`;
 
     graph += `    class ${roleId} ${roleClass};\n\n`;
 
@@ -76,7 +76,7 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
       // Edge from role to category
       graph += `    ${roleId} --> ${catId}\n`;
       // Style the edge
-      graph += `    linkStyle ${i} stroke:rgba(99,102,241,0.3),stroke-width:1.5px;\n\n`;
+      graph += `    linkStyle ${i} stroke:#4f46e5,stroke-width:1.5px;\n\n`;
     });
 
     return graph;
@@ -98,6 +98,8 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
         setError("");
       } catch (err) {
         console.error("Mermaid rendering failed:", err);
+        // Log the generated markdown to console so we can see what broke
+        console.log("Failed Markdown:", mermaidMarkdown);
         setError("Failed to render the skill graph.");
       }
     };
