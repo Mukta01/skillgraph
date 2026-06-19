@@ -158,26 +158,43 @@ async def analyze(
     """
     # Validate file type
     filename = resume.filename or "unknown"
-    if not filename.lower().endswith((".pdf", ".docx", ".txt")):
+    valid_extensions = (".pdf", ".docx", ".txt", ".jpg", ".jpeg", ".png", ".webp")
+    if not filename.lower().endswith(valid_extensions):
         raise HTTPException(
             status_code=400,
-            detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file.",
+            detail="Unsupported file format. Please upload a PDF, DOCX, TXT, or Image file.",
         )
 
     try:
         # Read file bytes into memory (never stored to disk)
         file_bytes = await resume.read()
 
-        # 1. Parse resume to plain text
-        logger.info(f"Parsing resume: {filename}")
-        resume_text = parse_resume(file_bytes, filename)
+        is_image = filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
+
+        if is_image:
+            logger.info(f"Image file detected: {filename}. Skipping local text parsing.")
+            mime_type = resume.content_type
+            if not mime_type or mime_type == "application/octet-stream":
+                if filename.lower().endswith(".png"): mime_type = "image/png"
+                elif filename.lower().endswith(".webp"): mime_type = "image/webp"
+                else: mime_type = "image/jpeg"
+                
+            logger.info("Extracting skills from resume image via Gemini...")
+            resume_analysis = await extract_skills_from_resume(
+                file_bytes=file_bytes,
+                mime_type=mime_type
+            )
+        else:
+            # 1. Parse resume to plain text
+            logger.info(f"Parsing resume: {filename}")
+            resume_text = parse_resume(file_bytes, filename)
+
+            # 2. Extract skills from resume text via Gemini
+            logger.info("Extracting skills from resume text...")
+            resume_analysis = await extract_skills_from_resume(resume_text=resume_text)
 
         # Explicitly discard the file bytes
         del file_bytes
-
-        # 2. Extract skills from resume via Gemini
-        logger.info("Extracting skills from resume...")
-        resume_analysis = await extract_skills_from_resume(resume_text)
 
         # 3. Get role skill requirements (check cache first)
         logger.info(f"Getting role requirements for: {target_role}")

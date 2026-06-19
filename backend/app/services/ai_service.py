@@ -115,22 +115,36 @@ def _generate_content_with_retry(
     raise RuntimeError("All generation models failed.")
 
 
-async def extract_skills_from_resume(resume_text: str) -> ResumeAnalysis:
+async def extract_skills_from_resume(
+    resume_text: str | None = None,
+    file_bytes: bytes | None = None,
+    mime_type: str | None = None,
+) -> ResumeAnalysis:
     """
     Extract skills from a resume using Gemini.
 
     Args:
-        resume_text: Plain text content of the resume.
+        resume_text: Plain text content of the resume (if parsed locally).
+        file_bytes: Raw bytes of the image file (if image upload).
+        mime_type: MIME type of the image.
 
     Returns:
         ResumeAnalysis with a list of skills and a professional summary.
     """
     system_prompt = _load_prompt("extract_resume_skills.txt")
-
     client = _get_client()
+
+    if file_bytes and mime_type:
+        contents = [
+            genai_types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+            "Here is the resume image to analyze."
+        ]
+    else:
+        contents = f"Here is the resume to analyze:\n\n{resume_text}"
+
     response = _generate_content_with_retry(
         client=client,
-        contents=f"Here is the resume to analyze:\n\n{resume_text}",
+        contents=contents,
         config=genai_types.GenerateContentConfig(
             system_instruction=system_prompt,
             response_mime_type="application/json",

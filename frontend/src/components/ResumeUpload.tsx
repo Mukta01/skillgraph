@@ -65,7 +65,7 @@ export default function ResumeUpload({
     >
       <input
         type="file"
-        accept=".pdf,.docx,.txt"
+        accept=".pdf,.docx,.txt,image/*"
         onChange={handleFileInput}
         className="absolute inset-0 opacity-0 cursor-pointer"
         id="resume-upload"
@@ -95,8 +95,7 @@ export default function ResumeUpload({
           <p className="text-white/70 font-medium">
             Drop your resume here, or{" "}
             <span className="text-indigo-400 underline underline-offset-2">browse</span>
-          </p>
-          <p className="text-sm text-white/40">PDF, DOCX, or TXT • Max 5MB</p>
+          <p className="text-sm text-white/40">PDF, DOCX, TXT, or Image (JPEG/PNG/WebP) • Max 5MB</p>
         </>
       )}
     </div>
@@ -108,8 +107,11 @@ function isValidFile(file: File): boolean {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
+    "image/jpeg",
+    "image/png",
+    "image/webp"
   ];
-  const validExtensions = [".pdf", ".docx", ".txt"];
+  const validExtensions = [".pdf", ".docx", ".txt", ".jpg", ".jpeg", ".png", ".webp"];
   const hasValidExtension = validExtensions.some((ext) =>
     file.name.toLowerCase().endsWith(ext)
   );
