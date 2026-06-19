@@ -163,8 +163,4 @@ graph LR
 - **No login required.** Anonymous sessions via UUID stored in your browser's localStorage.
 - **Session data auto-expires** after 30 days of inactivity.
 
----
 
-## 📄 License
-
-MIT
