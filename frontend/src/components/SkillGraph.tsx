@@ -117,10 +117,10 @@ export default function SkillGraph({ gap, roleRequirements }: SkillGraphProps) {
   }, [mermaidMarkdown]);
 
   return (
-    <div className="w-full h-[500px] rounded-xl border border-white/10 bg-gray-950/50 flex flex-col relative overflow-hidden">
+    <div className="w-full h-[600px] rounded-xl border border-white/10 bg-gray-950/50 flex flex-col relative overflow-hidden">
       <div 
         ref={containerRef}
-        className="flex-1 overflow-auto flex items-center justify-center p-4 [&>svg]:max-w-full [&>svg]:h-auto"
+        className="flex-1 overflow-auto p-6 [&>svg]:min-w-full [&>svg]:h-auto"
         dangerouslySetInnerHTML={{ __html: svgContent }}
       />
       {error && (
