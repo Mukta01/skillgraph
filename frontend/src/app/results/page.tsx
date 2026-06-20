@@ -52,7 +52,7 @@ export default function ResultsPage() {
   return (
     <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 animate-fade-in-up">
+      <div className="flex items-center justify-between mb-6 animate-fade-in-up print:hidden">
         <div>
           <button
             onClick={() => router.push("/")}
@@ -93,7 +93,7 @@ export default function ResultsPage() {
 
       {/* Tab Navigation */}
       <div
-        className="flex gap-1 p-1 bg-white/5 rounded-xl mb-6 animate-fade-in-up"
+        className="flex gap-1 p-1 bg-white/5 rounded-xl mb-6 animate-fade-in-up print:hidden"
         style={{ animationDelay: "0.1s" }}
       >
         {tabs.map((tab) => (
@@ -118,7 +118,7 @@ export default function ResultsPage() {
 
       {/* Tab Content */}
       <div
-        className="animate-fade-in-up bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-6"
+        className="animate-fade-in-up bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-6 print:border-none print:bg-transparent print:p-0"
         style={{ animationDelay: "0.2s" }}
       >
         {activeTab === "summary" && (
@@ -134,7 +134,7 @@ export default function ResultsPage() {
       </div>
 
       {/* Footer info */}
-      <div className="mt-6 text-center text-xs text-white/20 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+      <div className="mt-6 text-center text-xs text-white/20 animate-fade-in-up print:hidden" style={{ animationDelay: "0.3s" }}>
         Analysis powered by Google Gemini • Your resume was not stored
       </div>
     </main>

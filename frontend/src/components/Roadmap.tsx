@@ -26,42 +26,11 @@ const RESOURCE_ICONS: Record<string, string> = {
 export default function Roadmap({ roadmap }: RoadmapProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleDownloadPDF = async () => {
-    try {
-      setIsDownloading(true);
-      // Dynamically import html2pdf so it doesn't break SSR in Next.js
-      const module = await import("html2pdf.js");
-      // @ts-ignore
-      const html2pdf = module.default || module;
-      
-      const element = document.getElementById("roadmap-container");
-      if (!element) {
-        throw new Error("Roadmap container not found");
-      }
-      
-      const roleName = (roadmap.target_role || 'role')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      const dateStr = new Date().toISOString().slice(0, 10);
-
-      const opt = {
-        margin:       10,
-        filename:     `${roleName}-roadmap-${dateStr}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#000000' },
-        jsPDF:        { unit: 'mm' as const, format: 'a4', orientation: 'portrait' as const },
-        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] },
-        enableLinks:  true
-      };
-
-      await html2pdf().set(opt).from(element).save();
-    } catch (err: any) {
-      console.error("Failed to generate PDF:", err);
-      alert(`Failed to generate PDF: ${err?.message || "Unknown error"}. Please try again.`);
-    } finally {
-      setIsDownloading(false);
-    }
+  const handleDownloadPDF = () => {
+    // html2canvas (used by html2pdf.js) doesn't support modern CSS color functions like `lab()` or `oklch()` used by Tailwind v4.
+    // We will trigger the native browser print instead, which perfectly supports modern CSS, preserves clickable links,
+    // and keeps text selectable.
+    window.print();
   };
 
   if (roadmap.phases.length === 0) {
@@ -93,7 +62,7 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
         <button
           onClick={handleDownloadPDF}
           disabled={isDownloading}
-          className="text-sm px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed print:hidden"
           title="Download Roadmap as PDF"
         >
           {isDownloading ? (
