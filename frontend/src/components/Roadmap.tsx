@@ -85,17 +85,20 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
             {roadmap.phases.map((phase: RoadmapPhase, idx: number) => {
               const colors = PHASE_COLORS[idx % PHASE_COLORS.length];
               return (
-                <div key={phase.phase_number} className="relative pl-12">
+                <div 
+                  key={phase.phase_number} 
+                  className={`relative pl-12 ${idx > 0 ? "print:break-before-page print:mt-8" : ""}`}
+                >
                   {/* Dot on timeline */}
-                  <div className={`absolute left-3 top-5 w-3.5 h-3.5 rounded-full ${colors.dot} ring-4 ring-gray-950`} />
+                  <div className={`absolute left-3 top-5 w-3.5 h-3.5 rounded-full ${colors.dot} ring-4 ring-gray-950 print:hidden`} />
 
                   {/* Phase card */}
-                  <div className={`${colors.bg} border ${colors.border} rounded-xl p-5`}>
+                  <div className={`${colors.bg} border ${colors.border} rounded-xl p-5 print:border-gray-300 print:bg-white print:text-black`}>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className={`font-semibold ${colors.accent}`}>
+                      <h4 className={`font-semibold ${colors.accent} print:text-black print:text-xl`}>
                         Phase {phase.phase_number}: {phase.title}
                       </h4>
-                      <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded-md">
+                      <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded-md print:text-black print:bg-gray-100">
                         {phase.duration_weeks}w
                       </span>
                     </div>
@@ -104,21 +107,21 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
                       {phase.skills.map((skill: RoadmapSkillDetail) => (
                         <div
                           key={skill.name}
-                          className="bg-black/20 rounded-lg p-3"
+                          className="bg-black/20 rounded-lg p-3 print:bg-gray-50 print:border print:border-gray-200"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-white/90">
+                            <span className="text-sm font-medium text-white/90 print:text-black print:font-bold">
                               {skill.name}
                             </span>
-                            <span className="text-xs text-white/30">
+                            <span className="text-xs text-white/30 print:text-gray-500">
                               ~{skill.estimated_hours}h
                             </span>
                           </div>
-                          <p className="text-xs text-white/40 mb-2">
+                          <p className="text-xs text-white/40 mb-2 print:text-gray-700">
                             {skill.description}
                           </p>
                           {skill.resources.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 print:block print:space-y-2">
                               {skill.resources.map((res: RoadmapResource, i: number) => (
                                 <a
                                   key={i}
@@ -130,9 +133,10 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
                                     bg-white/5 text-indigo-300/80
                                     hover:bg-indigo-500/20 hover:text-indigo-300
                                     transition-colors inline-flex items-center gap-1
+                                    print:inline-block print:text-blue-600 print:underline print:bg-transparent print:p-0 print:mr-3
                                   "
                                 >
-                                  <span>{RESOURCE_ICONS[res.type] || "🔗"}</span>
+                                  <span className="print:hidden">{RESOURCE_ICONS[res.type] || "🔗"}</span>
                                   {res.title}
                                 </a>
                               ))}
