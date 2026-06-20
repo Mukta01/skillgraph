@@ -30,13 +30,16 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
     try {
       setIsDownloading(true);
       // Dynamically import html2pdf so it doesn't break SSR in Next.js
-      const html2pdf = (await import("html2pdf.js")).default;
+      const module = await import("html2pdf.js");
+      // @ts-ignore
+      const html2pdf = module.default || module;
+      
       const element = document.getElementById("roadmap-container");
       if (!element) {
         throw new Error("Roadmap container not found");
       }
       
-      const roleName = roadmap.target_role
+      const roleName = (roadmap.target_role || 'role')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
@@ -53,9 +56,9 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
       };
 
       await html2pdf().set(opt).from(element).save();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to generate PDF:", err);
-      alert("Failed to generate PDF. Please try again.");
+      alert(`Failed to generate PDF: ${err?.message || "Unknown error"}. Please try again.`);
     } finally {
       setIsDownloading(false);
     }
