@@ -41,7 +41,7 @@ SkillGraph is a cloud-native platform that analyzes real job market data, compar
 
 ### Backend
 - **Python 3.11+ / FastAPI** — REST API
-- **Google Gemini** (`gemini-2.5-flash-lite`) — AI skill extraction, image vision processing, & roadmap generation
+- **Google Gemini** (`gemini-3.5-flash`) — AI skill extraction, image vision processing, & roadmap generation
 - **Instructor** — structured LLM output with Pydantic validation
 - **PyMuPDF & python-docx** — PDF/DOCX text extraction
 - **asyncpg** — async PostgreSQL driver
@@ -147,7 +147,7 @@ graph LR
 | `GEMINI_API_KEY` | ✅ | Google Gemini API key |
 | `DATABASE_URL` | ✅ | PostgreSQL connection string (`?sslmode=require`) |
 | `ALLOWED_ORIGINS` | ✅ | Frontend URL (CORS) |
-| `GEMINI_MODEL` | ❌ | Model name (default: `gemini-2.0-flash`) |
+| `GEMINI_MODEL` | ❌ | Model name (default: `gemini-3.5-flash`) |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | ✅ | Set to `1` for Azure to install dependencies |
 
 ### Frontend (GitHub Actions Secret)

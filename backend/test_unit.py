@@ -205,7 +205,7 @@ def test_config():
     # Test that empty API key raises
     s = Settings.__new__(Settings)
     s.GEMINI_API_KEY = ""
-    s.GEMINI_MODEL = "gemini-2.0-flash"
+    s.GEMINI_MODEL = "gemini-3.5-flash"
     s.DATABASE_URL = "postgresql://x:x@localhost/x"
     s.ALLOWED_ORIGINS = ["http://localhost:3000"]
     try:

@@ -29,7 +29,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 | `DATABASE_URL` | `postgresql://<user>:<pass>@<server>.postgres.database.azure.com:5432/postgres?sslmode=require` | ✅ |
 | `GEMINI_API_KEY` | Your Google Gemini API key | ✅ |
 | `ALLOWED_ORIGINS` | Frontend Azure URL (no trailing slash) | ✅ |
-| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | ❌ |
+| `GEMINI_MODEL` | `gemini-3.5-flash` | ❌ |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | `1` | ✅ |
 
 > **Important:** If your database password contains special characters like `@`, you must URL-encode them. For example, `@` becomes `%40`. So a password of `Pass@123` becomes `Pass%40123` in the connection string.
