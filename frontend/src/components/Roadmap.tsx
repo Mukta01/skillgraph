@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { LearningRoadmap, RoadmapPhase, RoadmapSkillDetail, RoadmapResource } from "@/lib/types";
 
 interface RoadmapProps {
@@ -23,6 +24,37 @@ const RESOURCE_ICONS: Record<string, string> = {
 };
 
 export default function Roadmap({ roadmap }: RoadmapProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsDownloading(true);
+      // Dynamically import html2pdf so it doesn't break SSR in Next.js
+      const html2pdf = (await import("html2pdf.js")).default;
+      const element = document.getElementById("roadmap-container");
+      if (!element) {
+        throw new Error("Roadmap container not found");
+      }
+      
+      const opt = {
+        margin:       10,
+        filename:     'learning-roadmap.pdf',
+        image:        { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#000000' },
+        jsPDF:        { unit: 'mm' as const, format: 'a4', orientation: 'portrait' as const },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] },
+        enableLinks:  true
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (roadmap.phases.length === 0) {
     return (
       <div className="text-center py-12">
@@ -41,85 +73,104 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
     <div className="space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">
-          Your Learning Path
-        </h3>
-        <span className="text-sm text-white/40 bg-white/5 px-3 py-1 rounded-full">
-          ~{roadmap.total_weeks} weeks total
-        </span>
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-semibold text-white">
+            Your Learning Path
+          </h3>
+          <span className="text-sm text-white/40 bg-white/5 px-3 py-1 rounded-full hidden sm:inline-block">
+            ~{roadmap.total_weeks} weeks total
+          </span>
+        </div>
+        <button
+          onClick={handleDownloadPDF}
+          disabled={isDownloading}
+          className="text-sm px-4 py-2 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 hover:text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Download Roadmap as PDF"
+        >
+          {isDownloading ? (
+             <span className="animate-spin text-lg leading-none">⏳</span>
+          ) : (
+             <span className="text-lg leading-none">📥</span>
+          )}
+          {isDownloading ? "Generating..." : "Download PDF"}
+        </button>
       </div>
 
-      {/* Timeline */}
-      <div className="relative">
-        {/* Vertical line */}
-        <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-indigo-500/50 via-violet-500/50 to-cyan-500/50" />
+      {/* Timeline Container for PDF export */}
+      <div id="roadmap-container" className="p-4 bg-gray-950 rounded-xl relative">
+        {/* Timeline */}
+        <div className="relative">
+          {/* Vertical line */}
+          <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-indigo-500/50 via-violet-500/50 to-cyan-500/50" />
 
-        <div className="space-y-6">
-          {roadmap.phases.map((phase: RoadmapPhase, idx: number) => {
-            const colors = PHASE_COLORS[idx % PHASE_COLORS.length];
-            return (
-              <div key={phase.phase_number} className="relative pl-12">
-                {/* Dot on timeline */}
-                <div className={`absolute left-3 top-5 w-3.5 h-3.5 rounded-full ${colors.dot} ring-4 ring-gray-950`} />
+          <div className="space-y-6">
+            {roadmap.phases.map((phase: RoadmapPhase, idx: number) => {
+              const colors = PHASE_COLORS[idx % PHASE_COLORS.length];
+              return (
+                <div key={phase.phase_number} className="relative pl-12">
+                  {/* Dot on timeline */}
+                  <div className={`absolute left-3 top-5 w-3.5 h-3.5 rounded-full ${colors.dot} ring-4 ring-gray-950`} />
 
-                {/* Phase card */}
-                <div className={`${colors.bg} border ${colors.border} rounded-xl p-5`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className={`font-semibold ${colors.accent}`}>
-                      Phase {phase.phase_number}: {phase.title}
-                    </h4>
-                    <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded-md">
-                      {phase.duration_weeks}w
-                    </span>
-                  </div>
+                  {/* Phase card */}
+                  <div className={`${colors.bg} border ${colors.border} rounded-xl p-5`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className={`font-semibold ${colors.accent}`}>
+                        Phase {phase.phase_number}: {phase.title}
+                      </h4>
+                      <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded-md">
+                        {phase.duration_weeks}w
+                      </span>
+                    </div>
 
-                  <div className="space-y-3">
-                    {phase.skills.map((skill: RoadmapSkillDetail) => (
-                      <div
-                        key={skill.name}
-                        className="bg-black/20 rounded-lg p-3"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-white/90">
-                            {skill.name}
-                          </span>
-                          <span className="text-xs text-white/30">
-                            ~{skill.estimated_hours}h
-                          </span>
-                        </div>
-                        <p className="text-xs text-white/40 mb-2">
-                          {skill.description}
-                        </p>
-                        {skill.resources.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {skill.resources.map((res: RoadmapResource, i: number) => (
-                              <a
-                                key={i}
-                                href={res.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="
-                                  text-xs px-2 py-1 rounded-md
-                                  bg-white/5 text-indigo-300/80
-                                  hover:bg-indigo-500/20 hover:text-indigo-300
-                                  transition-colors inline-flex items-center gap-1
-                                "
-                              >
-                                <span>{RESOURCE_ICONS[res.type] || "🔗"}</span>
-                                {res.title}
-                              </a>
-                            ))}
+                    <div className="space-y-3">
+                      {phase.skills.map((skill: RoadmapSkillDetail) => (
+                        <div
+                          key={skill.name}
+                          className="bg-black/20 rounded-lg p-3"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-white/90">
+                              {skill.name}
+                            </span>
+                            <span className="text-xs text-white/30">
+                              ~{skill.estimated_hours}h
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          <p className="text-xs text-white/40 mb-2">
+                            {skill.description}
+                          </p>
+                          {skill.resources.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {skill.resources.map((res: RoadmapResource, i: number) => (
+                                <a
+                                  key={i}
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="
+                                    text-xs px-2 py-1 rounded-md
+                                    bg-white/5 text-indigo-300/80
+                                    hover:bg-indigo-500/20 hover:text-indigo-300
+                                    transition-colors inline-flex items-center gap-1
+                                  "
+                                >
+                                  <span>{RESOURCE_ICONS[res.type] || "🔗"}</span>
+                                  {res.title}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
