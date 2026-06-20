@@ -36,9 +36,15 @@ export default function Roadmap({ roadmap }: RoadmapProps) {
         throw new Error("Roadmap container not found");
       }
       
+      const roleName = roadmap.target_role
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      const dateStr = new Date().toISOString().slice(0, 10);
+
       const opt = {
         margin:       10,
-        filename:     'learning-roadmap.pdf',
+        filename:     `${roleName}-roadmap-${dateStr}.pdf`,
         image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#000000' },
         jsPDF:        { unit: 'mm' as const, format: 'a4', orientation: 'portrait' as const },
