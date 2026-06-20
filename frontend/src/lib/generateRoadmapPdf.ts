@@ -27,6 +27,9 @@ export async function generateRoadmapPdf(roadmap: LearningRoadmap): Promise<void
   const ensureSpace = (needed: number) => {
     if (y + needed > PAGE_HEIGHT - MARGIN) {
       doc.addPage();
+      // Paint white background on the new page
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F");
       y = MARGIN;
     }
   };
@@ -94,18 +97,21 @@ export async function generateRoadmapPdf(roadmap: LearningRoadmap): Promise<void
   });
 
   // ════════════════════════════════════════════
-  //  PHASE PAGES — each phase on a new page
+  //  PHASES — continuous flow, no forced page breaks
   // ════════════════════════════════════════════
+  doc.addPage();
+  y = MARGIN;
+
+  // White background for first content page
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F");
+
   for (let idx = 0; idx < roadmap.phases.length; idx++) {
     const phase = roadmap.phases[idx];
     const color = PHASE_COLORS[idx % PHASE_COLORS.length];
 
-    doc.addPage();
-    y = MARGIN;
-
-    // White background for readability
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, "F");
+    // Ensure space for at least the phase header bar
+    ensureSpace(22);
 
     // ── Phase header bar ──
     doc.setFillColor(color[0], color[1], color[2]);
