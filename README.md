@@ -23,6 +23,7 @@ SkillGraph is a cloud-native platform that analyzes real job market data, compar
 | **Gap Analysis** | Compares your skills vs. role requirements. Shows readiness score (0–100%), matched & missing skills. |
 | **Visual Skill Graph** | Clean Mermaid.js hierarchy graph. Green = you have it, red = you need it. |
 | **AI Learning Roadmap** | Phased learning plan with time estimates and free resource links for every missing skill. |
+| **📥 Download Roadmap as PDF** | One-click PDF export of your learning roadmap via native browser print. All resource links remain clickable in the saved PDF. |
 | **35+ Roles Supported** | Works for any job — Software Engineer, Data Scientist, Marketing Manager, UX Designer, and more. |
 | **Smart Caching** | Role skill requirements are cached in PostgreSQL. Repeat queries are instant. |
 | **Anonymous Sessions** | No signup required. Session stored locally in your browser. |
