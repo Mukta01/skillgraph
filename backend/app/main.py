@@ -32,6 +32,7 @@ from app.services.ai_service import (
     extract_role_skills,
     extract_skills_from_resume,
     generate_roadmap,
+    validate_additional_skills_with_ai,
 )
 from app.services.gap_analyzer import analyze_gap
 from app.services.resume_parser import parse_resume
@@ -141,8 +142,9 @@ async def list_roles():
 
 @app.post("/api/analyze")
 async def analyze(
-    resume: UploadFile = File(..., description="Resume file (PDF, DOCX, or TXT)"),
+    resume: UploadFile = File(..., description="Resume file (PDF, DOCX, TXT, or Image)"),
     target_role: str = Form(..., description="Target job role"),
+    additional_skills: str | None = Form(None, description="Optional comma-separated extra skills"),
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
 ):
     """
@@ -165,6 +167,15 @@ async def analyze(
             detail="Unsupported file format. Please upload a PDF, DOCX, TXT, or Image file.",
         )
 
+    if additional_skills:
+        logger.info("Validating additional skills...")
+        invalid_skills = await validate_additional_skills_with_ai(additional_skills)
+        if invalid_skills:
+            raise HTTPException(
+                status_code=400,
+                detail=f"The following inputs are not recognized as valid professional skills: {', '.join(invalid_skills)}",
+            )
+
     try:
         # Read file bytes into memory (never stored to disk)
         file_bytes = await resume.read()
@@ -182,7 +193,8 @@ async def analyze(
             logger.info("Extracting skills from resume image via Gemini...")
             resume_analysis = await extract_skills_from_resume(
                 file_bytes=file_bytes,
-                mime_type=mime_type
+                mime_type=mime_type,
+                additional_skills=additional_skills
             )
         else:
             # 1. Parse resume to plain text
@@ -191,7 +203,10 @@ async def analyze(
 
             # 2. Extract skills from resume text via Gemini
             logger.info("Extracting skills from resume text...")
-            resume_analysis = await extract_skills_from_resume(resume_text=resume_text)
+            resume_analysis = await extract_skills_from_resume(
+                resume_text=resume_text,
+                additional_skills=additional_skills
+            )
 
         # Explicitly discard the file bytes
         del file_bytes

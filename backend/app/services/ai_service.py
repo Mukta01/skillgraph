@@ -27,6 +27,7 @@ from app.models import (
     RoadmapResource,
     RoadmapSkillDetail,
     RoleSkillRequirements,
+    ValidationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -115,10 +116,39 @@ def _generate_content_with_retry(
     raise RuntimeError("All generation models failed.")
 
 
+async def validate_additional_skills_with_ai(skills: str) -> list[str]:
+    """
+    Quickly validate user-provided additional skills.
+
+    Args:
+        skills: Comma-separated list of skills from the user.
+
+    Returns:
+        List of invalid/absurd skills. Empty list if all are valid.
+    """
+    system_prompt = _load_prompt("validate_skills.txt")
+    client = _get_client()
+
+    response = _generate_content_with_retry(
+        client=client,
+        contents=f"User claimed skills: {skills}",
+        config=genai_types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            response_mime_type="application/json",
+            response_schema=ValidationResponse,
+            temperature=0.1,
+        ),
+    )
+
+    data = json.loads(response.text)
+    return ValidationResponse(**data).invalid_skills
+
+
 async def extract_skills_from_resume(
     resume_text: str | None = None,
     file_bytes: bytes | None = None,
     mime_type: str | None = None,
+    additional_skills: str | None = None,
 ) -> ResumeAnalysis:
     """
     Extract skills from a resume using Gemini.
@@ -127,6 +157,7 @@ async def extract_skills_from_resume(
         resume_text: Plain text content of the resume (if parsed locally).
         file_bytes: Raw bytes of the image file (if image upload).
         mime_type: MIME type of the image.
+        additional_skills: Extra skills provided manually by the user.
 
     Returns:
         ResumeAnalysis with a list of skills and a professional summary.
@@ -134,13 +165,15 @@ async def extract_skills_from_resume(
     system_prompt = _load_prompt("extract_resume_skills.txt")
     client = _get_client()
 
+    additional_text = f"\n\nAdditionally, the user explicitly claims the following skills: {additional_skills}" if additional_skills else ""
+
     if file_bytes and mime_type:
         contents = [
             genai_types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-            "Here is the resume image to analyze."
+            f"Here is the resume image to analyze.{additional_text}"
         ]
     else:
-        contents = f"Here is the resume to analyze:\n\n{resume_text}"
+        contents = f"Here is the resume to analyze:\n\n{resume_text}{additional_text}"
 
     response = _generate_content_with_retry(
         client=client,

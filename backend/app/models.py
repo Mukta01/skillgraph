@@ -22,6 +22,11 @@ class ExtractedSkill(BaseModel):
         description="Proficiency or requirement level: beginner, intermediate, advanced"
     )
 
+class ValidationResponse(BaseModel):
+    """Result of validating user-input additional skills."""
+    invalid_skills: list[str] = Field(description="List of inputs that are not valid professional skills")
+
+
 
 class ResumeAnalysis(BaseModel):
     """Result of extracting skills from a user's resume."""

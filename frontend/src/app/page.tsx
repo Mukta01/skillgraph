@@ -10,6 +10,7 @@ export default function LandingPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [role, setRole] = useState("");
+  const [additionalSkills, setAdditionalSkills] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,7 +23,7 @@ export default function LandingPage() {
     setError("");
 
     try {
-      const result = await analyzeResume(file, role);
+      const result = await analyzeResume(file, role, additionalSkills);
       // Store result in sessionStorage for the results page
       sessionStorage.setItem("skillgraph_result", JSON.stringify(result));
       router.push("/results");
@@ -84,6 +85,25 @@ export default function LandingPage() {
               </span>
             </div>
             <RoleSelector selectedRole={role} onRoleSelect={setRole} />
+          </div>
+
+          {/* Step 3: Additional Skills */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center">
+                3
+              </span>
+              <span className="text-sm font-medium text-white/70">
+                Missing skills from resume? (Optional)
+              </span>
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. Python, Agile, Project Management"
+              value={additionalSkills}
+              onChange={(e) => setAdditionalSkills(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-colors"
+            />
           </div>
 
           {/* Error */}

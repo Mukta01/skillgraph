@@ -28,11 +28,16 @@ function setSessionId(id: string): void {
  */
 export async function analyzeResume(
   file: File,
-  targetRole: string
+  targetRole: string,
+  additionalSkills?: string
 ): Promise<AnalysisResponse> {
   const formData = new FormData();
   formData.append("resume", file);
   formData.append("target_role", targetRole);
+  
+  if (additionalSkills && additionalSkills.trim() !== "") {
+    formData.append("additional_skills", additionalSkills.trim());
+  }
 
   const headers: Record<string, string> = {};
   const sessionId = getSessionId();
