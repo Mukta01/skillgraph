@@ -1,0 +1,63 @@
+name: Daily Heartbeat Monitor
+
+on:
+  schedule:
+    # Run daily at 05:00 UTC (10:30 AM IST)
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      frontend_url:
+        description: 'Frontend URL to monitor'
+        required: true
+        default: 'https://skillgraph-app-web-h6g7h8cmbud8gtfd.centralindia-01.azurewebsites.net'
+      backend_url:
+        description: 'Backend Health Check URL to monitor'
+        required: true
+        default: 'https://skillgraph-api-cjc3dzazd5bvb5a7.centralindia-01.azurewebsites.net/health'
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Verify Live Services
+        env:
+          FRONTEND_URL: ${{ inputs.frontend_url || 'https://skillgraph-app-web-h6g7h8cmbud8gtfd.centralindia-01.azurewebsites.net' }}
+          BACKEND_URL: ${{ inputs.backend_url || 'https://skillgraph-api-cjc3dzazd5bvb5a7.centralindia-01.azurewebsites.net/health' }}
+        run: |
+          echo "=========================================="
+          echo "Starting daily heartbeat health check..."
+          echo "Frontend URL: $FRONTEND_URL"
+          echo "Backend URL:  $BACKEND_URL"
+          echo "=========================================="
+          
+          echo "Checking Frontend..."
+          frontend_status=$(curl -s -L -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
+          echo "Frontend HTTP Status: $frontend_status"
+          if [ "$frontend_status" -ne 200 ]; then
+            echo "❌ Frontend check failed! Expected status 200, got $frontend_status"
+            exit 1
+          fi
+          echo "✅ Frontend is healthy."
+          
+          echo "------------------------------------------"
+          
+          echo "Checking Backend API Health..."
+          backend_status=$(curl -s -L -o /dev/null -w "%{http_code}" "$BACKEND_URL")
+          echo "Backend HTTP Status: $backend_status"
+          if [ "$backend_status" -ne 200 ]; then
+            echo "❌ Backend check failed! Expected status 200, got $backend_status"
+            exit 1
+          fi
+          
+          backend_body=$(curl -s -L "$BACKEND_URL")
+          echo "Backend Response: $backend_body"
+          if ! echo "$backend_body" | grep -q '"status":"ok"'; then
+            echo "❌ Backend health check response does not contain status 'ok'!"
+            exit 1
+          fi
+          echo "✅ Backend is healthy."
+          
+          echo "=========================================="
+          echo "🎉 All services are healthy and running!"
+          echo "=========================================="
