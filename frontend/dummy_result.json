@@ -1,0 +1,35 @@
+{
+  "session_id": "123",
+  "user_skills": [],
+  "user_summary": "Test user",
+  "role_requirements": {
+    "role_title": "Software Engineer",
+    "role_category": "Engineering",
+    "seniority": "Junior",
+    "skills": []
+  },
+  "gap": {
+    "matched_skills": [],
+    "missing_skills": [],
+    "readiness_score": 0.5
+  },
+  "roadmap": {
+    "target_role": "Software Engineer",
+    "total_weeks": 10,
+    "phases": [
+      {
+        "phase_number": 1,
+        "title": "Basics",
+        "duration_weeks": 2,
+        "skills": [
+          {
+            "name": "JavaScript",
+            "estimated_hours": 20,
+            "description": "Learn JS",
+            "resources": []
+          }
+        ]
+      }
+    ]
+  }
+}

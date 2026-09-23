@@ -1,4 +1,4 @@
-name: Deploy Next.js Frontend to Azure App Service
+  //Deployname: Deploy Next.js Frontend to Azure App Service
 
 on:
   push:

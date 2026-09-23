@@ -122,6 +122,19 @@ curl https://skillgraph-api-cjc3dzazd5bvb5a7.centralindia-01.azurewebsites.net/h
 # → {"status":"ok","version":"0.1.0"}
 ```
 
+### Daily Heartbeat Monitor
+
+An automated GitHub Actions workflow checks the health of the live frontend and backend endpoints automatically every day at 05:00 UTC (10:30 AM IST).
+
+It uses `curl` to:
+1. Ping the frontend URL: `https://skillgraph-app-web-h6g7h8cmbud8gtfd.centralindia-01.azurewebsites.net` and verify it returns HTTP 200.
+2. Ping the backend health endpoint: `https://skillgraph-api-cjc3dzazd5bvb5a7.centralindia-01.azurewebsites.net/health` and verify it returns HTTP 200 and `{"status":"ok"}`.
+
+If any check fails, the workflow run will fail and trigger automated email/push notifications to the repository owner.
+
+- **Workflow file:** [.github/workflows/heartbeat.yml](file:///c:/Users/Mukta/Documents/skillgraph/.github/workflows/heartbeat.yml)
+- **Manual Trigger:** Go to GitHub Repository → **Actions** → select **Daily Heartbeat Monitor** → click **Run workflow**. You can optionally override the frontend or backend URLs during manual execution.
+
 ### Log Streams
 
 - **Backend logs:** Azure Portal → Backend App Service → **Log stream**

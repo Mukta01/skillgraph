@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mermaid Test</title>
+</head>
+<body>
+    <div class="mermaid">
+graph TD
+    RoleCenter["Software Engineer"]
+    classDef matchedSkill fill:#064e3b,stroke:#047857,color:#6ee7b7,stroke-width:1.5px,rx:10px,ry:10px;
+    classDef missingSkill fill:#7f1d1d,stroke:#b91c1c,color:#fca5a5,stroke-width:1.5px,rx:10px,ry:10px;
+    classDef roleCenter fill:#312e81,stroke:#4f46e5,color:#c7d2fe,stroke-width:2px,rx:14px,ry:14px;
+    classDef category fill:transparent,stroke:#4f46e5,stroke-width:1px,stroke-dasharray:5 5,color:#a5b4fc;
+
+    class RoleCenter roleCenter;
+
+    subgraph Cat_0 ["Technical"]
+      direction TB
+      Node_0["Python"]
+      class Node_0 matchedSkill;
+      Node_1["SQL"]
+      class Node_1 matchedSkill;
+    end
+    class Cat_0 category;
+    RoleCenter --> Cat_0
+    linkStyle 0 stroke:#4f46e5,stroke-width:1.5px;
+
+    subgraph Cat_1 ["Tools"]
+      direction TB
+      Node_2["Docker"]
+      class Node_2 missingSkill;
+      Node_3["AWS"]
+      class Node_3 missingSkill;
+    end
+    class Cat_1 category;
+    RoleCenter --> Cat_1
+    linkStyle 1 stroke:#4f46e5,stroke-width:1.5px;
+
+    subgraph Cat_2 ["Soft Skills"]
+      direction TB
+      Node_4["Communication"]
+      class Node_4 missingSkill;
+    end
+    class Cat_2 category;
+    RoleCenter --> Cat_2
+    linkStyle 2 stroke:#4f46e5,stroke-width:1.5px;
+    </div>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
